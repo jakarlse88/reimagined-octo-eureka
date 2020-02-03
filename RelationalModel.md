@@ -21,6 +21,10 @@
       - [Inner Join](#inner-join)
       - [Outer Join](#outer-join)
       - [Natural Join](#natural-join)
+    - [Aggregation](#aggregation)
+      - [Partition](#partition)
+      - [Apply Aggregate Functions](#apply-aggregate-functions)
+      - [MapReduce](#mapreduce)
   - [Relational Data Model](#relational-data-model)
     - [Database integry constraints](#database-integry-constraints)
       - [Entity integrity](#entity-integrity)
@@ -155,6 +159,36 @@ For `RIGHT JOIN`, reverse the above.
 
 #### Natural Join
 A _natural join_ is a regular join. If the two relations being joins have columns that appear in both relations (ie. exactly the same name in both tables), the join can be implicit. 
+
+### Aggregation
+An aggregate is a whole formed by combining several separate elements. In a database context, aggregration is used to perform computations over multiple rows of a table. A proper aggregation consists of two steps/elements:
+
+1. A group of *partitioning attributes* (eg. _color_)
+2. One or more *aggregate function(s)* (eg. _average_)
+
+#### Partition
+If apples are partitioned by colour, groups of apples (aggregates) are formed, and the apples within each group all have the same colour. 
+
+Formally, the purpose of partitioning is to create groups of rows such that all rows in each group have the same values for the partitioning attributes.
+
+Partitioning by multiple attributes is also possible. 
+
+#### Apply Aggregate Functions
+The role of aggregate functions is to take a group of multiple rows and perform a calculation on them, finally returning a single value for each group. An example is calculating the average weight of each group of apples.
+
+Generally, an aggregate function takes a list and returns a single value. It's also possible for aggregate functions to take the values of multiple attributes (ie. multiple lists).
+
+#### MapReduce
+When a data set is especially large, several servers can be used to process the data in parallel, with one server coordinating the others and distributing the data among its slaves.
+
+With `MapReduce`, the information is first divided into chunks. Each chunk has a key and a value. Next a `reduce` function is defined. When the calculation is executed, all chunks with a particular key are directed to the same server, and this server then applies the reduce function to all of the values of the chunks it receives.
+
+| MapReduce      | Aggregation                    |
+| -------------- | -----------------------------  |
+| Data chunk     | Single row                     |
+| Key            | Patritioning attribute         |
+| Value          | Attributes sent to aggr. func. |
+| _Reduce_ func. | Aggregate function             |
 
 ## Relational Data Model
 The _relational data model_ makes sure data is entered and/or updated in one place only, containing a number of linked tables that provide access to all data related to a particular record, or set of records.
