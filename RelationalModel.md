@@ -25,6 +25,7 @@
       - [Partition](#partition)
       - [Apply Aggregate Functions](#apply-aggregate-functions)
       - [MapReduce](#mapreduce)
+    - [Keys and Joins](#keys-and-joins)
   - [Relational Data Model](#relational-data-model)
     - [Database integry constraints](#database-integry-constraints)
       - [Entity integrity](#entity-integrity)
@@ -189,6 +190,41 @@ With `MapReduce`, the information is first divided into chunks. Each chunk has a
 | Key            | Patritioning attribute         |
 | Value          | Attributes sent to aggr. func. |
 | _Reduce_ func. | Aggregate function             |
+
+### Keys and Joins
+Because keys determine the nature of the objects a table represents, it's essential to know at least one candidate key per table.
+
+To verify whether or not a set of attributes `G` is a candidate key, first create a projection over `G` (ie. exclude the columns that are not `G`), then look to see if there are any duplicates.
+
+If there are duplicates, `G` is not a key. If there are no duplicates:
+
+1. If we can be sure no new rows will be added, `G` can be considered a key
+2. If more rows might be added, the designer of the table will need to be contacted to see whether `G` is a key, or to find out what a row represents.
+
+Rather than counting a potentially large table by hand (so to speak),
+let's do it programmatically:
+```C#
+public static void CheckTableForDuplicates(List<T> set)
+{
+  // 1. Count the number of rows
+  // 2. Discard duplicates
+  // 3. Re-count number of rows
+  
+  // 4. If the number of rows in 1) is different from the 
+  //    number of rows in 4), there are duplicates.
+}
+```
+
+Generally, we join a foreign key of `A` to the primary key (or a candidate key) of `B`. The table resulting from this operation will have
+
+- as many as, or fewer rows than `A` if the operation is an `INNER JOIN`
+- as many rows as `A`, if the operation is a `LEFT OUTER JOIN` (with `A` on the left)
+
+After the `JOIN`, if there are more rows than anticipated, there is a chance that the assumed key (whether primary or candidate) of `B` was in fact not. As a general rule, in the join condition `A.[FK] = B.[PK/CK]` it must be ensured that at least one of the terms on either side is a candidate or primary key.
+
+If this is not so, it can still be used, but it would be prudent to both double and triple-check one's reasoning and make sure it's what's really needed. Further, absolutely do check the final table for consistency and rows.
+
+---
 
 ## Relational Data Model
 The _relational data model_ makes sure data is entered and/or updated in one place only, containing a number of linked tables that provide access to all data related to a particular record, or set of records.
