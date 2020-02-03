@@ -19,6 +19,8 @@
     - [Cartesian Product](#cartesian-product)
     - [Join](#join)
       - [Inner Join](#inner-join)
+      - [Outer Join](#outer-join)
+      - [Natural Join](#natural-join)
   - [Relational Data Model](#relational-data-model)
     - [Database integry constraints](#database-integry-constraints)
       - [Entity integrity](#entity-integrity)
@@ -130,7 +132,29 @@ Ie. the Cartesian product between a relation with 3 tuples and a relation with 4
 The purpose of `JOIN` is to "combine" two or more tables, creating one big table containing information from all combined tables.
 
 #### Inner Join
+Generally, when leaving `JOIN` unqualified, we mean `INNER JOIN`.
 
+Formally, we perform an `INNER JOIN` on the tables `T1` and `T2` according to the condition `T2.[FK]T1Id = T1.[PK]Id`. The join condition must always be specified. In a `JOIN`, the foreign key of one table references a candidate key of another table (often the primary key). 
+
+A primary key can consist of many columns. In this case, a join condition could look like this:
+
+`R1.Attr1 = R2.Attr3 AND R1.Attr2 = R2.Attr4`
+
+Given the two tables `Customer` and `Order`, with the latter having a `CustomerId` foreign key referencing `Customer`'s primary key `Id`, an inner join will return a list of all orders together with their respective customers. However, it will not return customers with no order. 
+
+An `INNER JOIN` will only return results when there is a record in the table on both sides of the join.
+
+#### Outer Join
+An `OUTER JOIN` can return rows from one table even when there is no corresponding row in the other table. Building on the example from the last section, it can return all customers together with any orders they've placed, including customers who haven't placed any orders.
+
+A `LEFT JOIN` returns all rows from the left table, even if there are no matches in the right table. That is to say, if the `ON` clause matches zero records in the right table, the join will still return a row in the result, with `NULL` in each column from the right table.
+
+For `RIGHT JOIN`, reverse the above. 
+
+`FULL JOIN` combines the results of both left and right outer joins. The joined table will contain all records from both tables, with `NULL` for missing matches on both sides.
+
+#### Natural Join
+A _natural join_ is a regular join. If the two relations being joins have columns that appear in both relations (ie. exactly the same name in both tables), the join can be implicit. 
 
 ## Relational Data Model
 The _relational data model_ makes sure data is entered and/or updated in one place only, containing a number of linked tables that provide access to all data related to a particular record, or set of records.
