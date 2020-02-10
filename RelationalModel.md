@@ -97,18 +97,81 @@ Everything having to do with the manipulation of relations is called _relational
 Projection and restriction are both _unary_ operations, meaning they are defined on a single relation.
 
 #### Projection
-Projection means choosing the attributes of a relation we want to display and excluding whatever attributes are left over.
+Projection means choosing the attributes of a relation we want to display and excluding whatever attributes are left over, ie: 
+
+> `SELECT id, name, status FROM entity;`
+
+##### Scalar Functions
+_Functions_ can be applied to columns.
+
+> `SELECT id * 2, name, status FROM entity;`
+
+Or, in combination:
+
+> `SELECT ABS( (- id) * 2 ) AS calcul_bizarre, name, status FROM entity;` 
+
+Without the `AS` statement, the column resulting from the calculation would be named _ABS((-id)*2)_.
+
+String concatenation:
+
+> `SELECT LastName || ',' || FirstName  AS Name FROM entity;`
+>
+> // MS SQL Server ver:
+>
+> `SELECT ( LastName + ',' + FirstName ) AS Name FROM employee;`
+
+Date and binary functions:
+> `SELECT CURRENT_DATE() > created_date FROM entity;`
+
 
 #### Restriction
 Projection is choosing a sub-set of all available columns; restriction is choosing a sub-set of all available _rows_. Restriction can be thought of as a filter that selects rows meeting a specified condition.
+
+> `SELECT * FROM entity WHERE name = 'Arbitrary Name';`
+
+`=` tests for equality. Other SQL operators include:
+
+| Operator | Tests whether... |
+| -------- | ---------------- |
+| `A = B`  | `A` is equal to `B` |
+| `A <> B` | `A` is different from `B` |
+| `A > B`  | `A` is greater than `B` |
+| `A < B`  | `A` is less than `B` | 
+| `A >= B` | `A` is greater than/equal to `B` |
+| `A <= B` | `A` is less than/equal to `B` |
+| `A BETWEEN B AND C` | `A` is between `B` and `C` |
+| `A LIKE 'character string'` | //TODO |
+| `A IN (B1, B2, B3, ...)` | `A` is found in the given list |
+| `A IS NULL` | `A` has no value |
+
+We also have the logical operators:
+- `OR`
+- `AND`
+- `NOT`
+
+This enables more complex queries:
+> `SELECT * FROM entity WHERE (id < 4 AND (NOT id < 10)) OR (name = 'Arbitrary Name');`
 
 ### Set Operations
 Set operations are _binary_, ie. they combine two or more elements to produce a third. In relational algebra, set operators operate on pairs of relations contained within the same schema--that is, set operations operate on a _set of relations_.
 
 #### Union
-The union of two relations of the same schema `R1` and `R2` produces a third relation of the same schema containing all tuples of `R1` and `R2`.
+The union of two relations of the same schema `R1` and `R2` produces a third relation of the same schema containing all tuples of `R1` and `R2`, ie. concatenates the results of two queries into a single result set (but does not create individual rows from columns gathered from two tables.). **``UNION`` combines rows.**
+
+- `UNION ALL` - Includes duplicates.
+- ``UNION`` - Excludes duplicates.
 
 `R1 union R2 = R3`
+
+The case of two tables _not_ being of the same schema is easily fixed using projection:
+
+```sql
+SELECT student_id, final_grade FROM EnglishClass
+UNION
+SELECT student_id, final_grade FROM AnthropologyClass;
+```
+
+This will produce a list of student IDs along with their associated final grades from two separate classes, ie. all students in both classes.
 
 #### Difference
 The difference between an `R3` and `R2` relation results in an `R1` relation containing all tuples of `R3` that are not found in `R2`.
@@ -119,10 +182,52 @@ The difference between `R3` and `R2` does not produce the same result as the dif
 
 It's possible to calculate the difference between `R1` and `R2` even if `R2` contains tuples that are not found in `R1`.
 
+In T-SQL, ``EXCEPT`` returns distinct rows from the left input query that aren't output by the right input query.
+
+```sql
+SELECT student_id, final_grade FROM EnglishClass
+EXCEPT
+SELECT student_id, final_grade FROM AnthropologyClass;
+```
+
+This will produce a list of student IDs along with their associated final grades for the students who took English _and who didn't also take Anthropology_. 
+
 #### Intersection
 The intersection between two relations `R1` and `R2` results in a third relation `R3` containing only the tuples that are found in both `R1` and `R2`.
 
 Intersection is equivalent to two consecutive `difference`s. `R1 intersction R2` == `R1 difference (R1 difference R2)`.
+
+T-SQL ``INTERSECT`` returns any distinct values that are returned by both the query on the left and right sides of the INTERSECT operator.
+
+```sql
+SELECT student_id, final_grade FROM EnglishClass
+INTERSECT
+SELECT student_id, final_grade FROM AnthropologyClass;
+```
+
+This will return a list of students along with their associated final grades for the students who took both English and Anthropology.
+
+##### Caveat Emptor
+Where primary keys can be used, there is a simpler way to perform the ``Difference`` and ``Intersection`` operations (and MySQL for example doesn't even accept either the ``EXCEPT`` or ``INTERSECT`` keywords).
+
+**EXCEPT**:
+```sql
+SELECT *
+FROM EnglishClass
+WHERE student_id NOT IN (
+  SELECT student_id from AnthropologyClass
+);
+```
+
+**INTERSECT**:
+```sql
+SELECT *
+FROM EnglishClass
+WHERE student_id IN (
+  SELECT student_id from AnthropologyClass
+);
+```
+
 
 ### Cartesian Product
 The _Cartesian product_ of two relations `R1` and `R2` represents all of the possible combinations of `R1` tuples and `R2` tuples. 
@@ -132,6 +237,8 @@ Given a table representing three varieties of apples and a table representing fo
 - has rows for all of the apples supplied for tasting
 
 Ie. the Cartesian product between a relation with 3 tuples and a relation with 4 tuples results in a relation of 12 tuples.
+
+> `SELECT * FROM entity, address;`
 
 ### Join
 The purpose of `JOIN` is to "combine" two or more tables, creating one big table containing information from all combined tables.
@@ -148,6 +255,48 @@ A primary key can consist of many columns. In this case, a join condition could 
 Given the two tables `Customer` and `Order`, with the latter having a `CustomerId` foreign key referencing `Customer`'s primary key `Id`, an inner join will return a list of all orders together with their respective customers. However, it will not return customers with no order. 
 
 An `INNER JOIN` will only return results when there is a record in the table on both sides of the join.
+
+A join is equivalent to a Cartesian product followed by a restriction, thus:
+
+```sql
+SELECT * FROM entity, address WHERE entity.id_address = address.id_address;
+```
+
+Using ``JOIN`` and ``ON``:
+
+```sql
+SELECT * FROM address JOIN entity on entity.id_address = address.id_address;
+```
+
+##### Multiple Columns
+If a foreign key contains two or more attributes, ``AND`` is required.
+
+```sql
+SELECT * FROM t1, t2 WHERE (t1.fk1 = t2.pk1 AND t1.fk2 = t2.pk2);
+```
+
+Or:
+```sql
+SELECT * FROM t1 JOIN t2 ON (t1.fk1 = t2.pk1 AND t1.fk2 = t2.pk2);
+```
+
+##### Association Table
+
+```sql
+SELECT
+    f.Id as first_table_id,
+    f.name as first_table_name,
+    s.id as second_table_id,
+    s.name as second_table_name
+FROM 
+    FirstTable f,
+    AssociationTable a,
+    SecondTable s
+WHERE
+    a.SecondTableId = s.Id
+    AND a.FirstTableId = f.Id
+    AND s.Name = 'Arbitrary Name' ;
+```
 
 #### Outer Join
 An `OUTER JOIN` can return rows from one table even when there is no corresponding row in the other table. Building on the example from the last section, it can return all customers together with any orders they've placed, including customers who haven't placed any orders.
